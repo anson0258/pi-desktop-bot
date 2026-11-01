@@ -390,7 +390,11 @@ function panelState() {
     deliveryRetries: bindings.filter(binding => {
       const [kind, ...rest] = binding.key.split(":");
       const failed = store.getFailedDelivery(kind, rest.join(":"));
-      return failed?.sessionId === binding.sessionId && failed.boundAt === binding.boundAt;
+      if (!failed || failed.sessionId !== binding.sessionId || failed.boundAt !== binding.boundAt) return false;
+      // 过期（10 分钟前）的失败结果不再提示：内容已经过时，重发只会制造困扰，
+      // 也会让面板长期挂着一堆没有意义的旧结果。没有 createdAt 的旧记录同样视为过期。
+      const age = Date.now() - Number(failed.createdAt ?? 0);
+      return Number.isFinite(age) && age < 10 * 60 * 1000;
     }).map(binding => ({ key: binding.key })),
   };
 }
