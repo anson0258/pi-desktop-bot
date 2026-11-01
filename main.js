@@ -186,7 +186,9 @@ async function startChannel(kind = activeChannelKind()) {
     onChoice: choice => runtime.channel === active ? runtime.bridge.handleChoice({ ...choice, channel: kind }) : undefined,
     onLog: (level, message, data) => {
       log(level, message, data);
-      store.audit({ event: "channel-log", channel: kind, level, message });
+      // 把 onLog 的 data 一起落盘：微信 poll/send 的真实错误码只在 data 里，
+      // 之前被丢弃，导致 audit.jsonl 只能看到 "weixin poll failed" 却不知道原因。
+      store.audit({ event: "channel-log", channel: kind, level, message, ...(data === undefined ? {} : { data }) });
     },
     onStatus: (status, error) => {
       if (runtime.channel !== active) return;

@@ -42,7 +42,7 @@ const QR_RPC = {
     cancel: "remote-control.cancelWeixinRegistration", action: "扫码登录", hint: "用微信扫码，并在手机上确认登录",
   },
 };
-const STATUS_TEXT = { connected: "已连接", connecting: "连接中", starting: "启动中", stopped: "已停止", unconfigured: "待接入" };
+const STATUS_TEXT = { connected: "已连接", connecting: "连接中", starting: "启动中", stopped: "已停止", unconfigured: "待接入", expired: "登录已失效" };
 const BIND_TTL = 10 * 60 * 1000;
 const state = { selected: "feishu", snapshot: null, editing: false, formKind: "", dirty: false, qr: null, qrSequence: 0, bind: null, entries: [] };
 const channelNodes = new Map();
