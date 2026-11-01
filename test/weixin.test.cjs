@@ -118,7 +118,47 @@ test("buildInboundMessage：image_item 提取 media/full_url/aes_key/mid_size", 
   assert.equal(attachment.aesKey, AES_KEY_HEX);
   assert.equal(attachment.sizeBytes, 12345);
 });
+test("buildInboundMessage：voice_item 取微信官方语音转文字文本，不当音频附件", () => {
+  const inbound = buildInboundMessage({
+    from_user_id: "wxid_voice",
+    item_list: [{ type: 3, voice_item: { text: "帮我查一下明天的天气" } }],
+  });
+  assert.equal(inbound.text, "帮我查一下明天的天气");
+  assert.equal(inbound.attachments.length, 0);
+});
 
+test("buildInboundMessage：voice_item 无文字时给占位文本，消息不被丢弃", () => {
+  const inbound = buildInboundMessage({
+    from_user_id: "wxid_voice",
+    item_list: [{ type: 3, voice_item: {} }],
+  });
+  assert.match(inbound.text, /语音消息 — 未能识别文字/);
+  assert.equal(inbound.attachments.length, 0);
+});
+
+test("微信语音消息：先回识别文字到微信，再派发给 AI（顺序正确）", { timeout: 3000 }, async t => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "weixin-voice-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const dispatched = [];
+  const adapter = pollAdapter(t, [{ from_user_id: "wxid_voice", item_list: [
+    { type: 3, voice_item: { text: "帮我查一下明天的天气" } },
+  ] }], {
+    dataDir: dir,
+    onMessage: async msg => {
+      // 派发时 sendmessage 应该已经发出去了
+      const sendReq = adapter.requests.find(req => req.url.endsWith("/sendmessage"));
+      assert.ok(sendReq, "语音确认文字应先于派发发回微信");
+      assert.match(sendReq.body.msg.item_list[0].text_item.text, /已识别语音/);
+      dispatched.push(msg);
+    },
+  });
+  await adapter.channel.start();
+  await adapter.done;
+  assert.equal(dispatched.length, 1);
+  assert.equal(dispatched[0].text, "帮我查一下明天的天气");
+  assert.equal(dispatched[0].isVoice, true);
+  assert.equal(dispatched[0].voiceText, "帮我查一下明天的天气");
+});
 test("buildInboundMessage：无发送者或无内容返回 null", () => {
   assert.equal(buildInboundMessage({ text: "hi" }), null);
   assert.equal(buildInboundMessage({ from_user_id: "wxid_x" }), null);
