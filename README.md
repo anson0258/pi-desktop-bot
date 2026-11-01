@@ -1,6 +1,7 @@
 # Pi-Desktop 机器人
 
-通过飞书、Telegram、微信等外部聊天工具接入本机 PI-Desktop Agent：发送任务、接收结果、回答问题、中断执行和审阅 Plan 检查点。当前使用长连接或长轮询，钉钉面板显示“即将支持”；Webhook 接入尚未实现。
+
+> 本项目 fork 自 [CJLY-0915/pi-desktop-bot](https://github.com/CJLY-0915/pi-desktop-bot)，感谢原作者的开源分享。本分支在此基础上新增了「微信语音消息自动转文字」功能。
 
 ## 为什么不是 anywhere 面板或微信 BOT
 
